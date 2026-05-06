@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Trésorerie 2025</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #1A3A5C;
+    --navy-light: #2E6DA4;
+    --green: #1D9E75;
+    --green-light: #E1F5EE;
+    --green-dark: #0F6E56;
+    --red: #D85A30;
+    --red-light: #FAECE7;
+    --red-dark: #993C1D;
+    --blue: #378ADD;
+    --blue-light: #E6F1FB;
+    --blue-dark: #185FA5;
+    --amber: #EF9F27;
+    --amber-light: #FAEEDA;
+    --amber-dark: #854F0B;
+    --gray-50: #F8FAFC;
+    --gray-100: #F1F5F9;
+    --gray-200: #E2E8F0;
+    --gray-400: #94A3B8;
+    --gray-600: #475569;
+    --gray-800: #1E293B;
+    --white: #FFFFFF;
+    --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.05);
+    --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+  }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--gray-50);
+    color: var(--gray-800);
+    min-height: 100vh;
+    padding: 0;
+  }
+
+  /* ── Header ── */
+  .header {
+    background: var(--navy);
+    padding: 20px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .header-left h1 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    letter-spacing: -0.02em;
+  }
+  .header-left p {
+    font-size: 12px;
+    color: #9DB8D2;
+    margin-top: 2px;
+  }
+  .header-right {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.12);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.2);
+  }
+
+  /* ── Filters ── */
+  .filters {
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    padding: 12px 32px;
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+  .filters label {
+    font-size: 12px;
+    color: var(--gray-400);
+    margin-right: 4px;
+    font-weight: 500;
+  }
+  .fbtn {
+    font-size: 12px;
+    font-family: 'Inter', sans-serif;
+    padding: 5px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--gray-200);
+    background: transparent;
+    color: var(--gray-600);
+    cursor: pointer;
+    transition: all 0.15s;
+    font-weight: 500;
+  }
+  .fbtn:hover { background: var(--gray-100); }
+  .fbtn.active { background: var(--navy); color: #fff; border-color: var(--navy); }
+
+  /* ── Main layout ── */
+  .main { padding: 24px 32px; max-width: 1400px; margin: 0 auto; }
+
+  /* ── KPI Grid ── */
+  .kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+  }
+  .kpi-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border-left: 4px solid transparent;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 60px; height: 60px;
+    border-radius: 0 12px 0 60px;
+    opacity: 0.06;
+  }
+  .kpi-card.green { border-left-color: var(--green); }
+  .kpi-card.green::after { background: var(--green); }
+  .kpi-card.red { border-left-color: var(--red); }
+  .kpi-card.red::after { background: var(--red); }
+  .kpi-card.blue { border-left-color: var(--blue); }
+  .kpi-card.blue::after { background: var(--blue); }
+  .kpi-card.amber { border-left-color: var(--amber); }
+  .kpi-card.amber::after { background: var(--amber); }
+
+  .kpi-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gray-400);
+    margin-bottom: 8px;
+  }
+  .kpi-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 26px;
+    font-weight: 500;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .kpi-card.green .kpi-value { color: var(--green-dark); }
+  .kpi-card.red .kpi-value { color: var(--red-dark); }
+  .kpi-card.blue .kpi-value { color: var(--blue-dark); }
+  .kpi-card.amber .kpi-value { color: var(--amber-dark); }
+  .kpi-unit {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-top: 2px;
+  }
+
+  /* ── Charts Grid ── */
+  .charts-row {
+    display: grid;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  .charts-row.two-one { grid-template-columns: 2fr 1fr; }
+  .charts-row.two { grid-template-columns: 1fr 1fr; }
+
+  .chart-card {
+    background: var(--white);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .chart-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--gray-800);
+    margin-bottom: 4px;
+  }
+  .chart-sub {
+    font-size: 11px;
+    color: var(--gray-400);
+    margin-bottom: 16px;
+  }
+  .legend {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+  }
+  .leg {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    color: var(--gray-600);
+  }
+  .leg-dot {
+    width: 10px; height: 10px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+
+  /* ── Table ── */
+  .table-card {
+    background: var(--white);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .table-header {
+    padding: 16px 20px 12px;
+    border-bottom: 1px solid var(--gray-100);
+  }
+  .table-header .chart-title { margin-bottom: 2px; }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  thead th {
+    background: var(--navy);
+    color: #fff;
+    padding: 10px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  thead th:not(:first-child) { text-align: right; }
+  tbody td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-800);
+  }
+  tbody td:not(:first-child) { text-align: right; font-family: 'DM Mono', monospace; font-size: 12px; }
+  tbody tr:nth-child(even) td { background: var(--gray-50); }
+  tbody tr:hover td { background: var(--blue-light); }
+  .td-mois { font-weight: 600; color: var(--navy); }
+  .td-pos { color: var(--green-dark); font-weight: 600; }
+  .td-neg { color: var(--red-dark); font-weight: 600; }
+  .pill {
+    display: inline-block;
+    font-size: 10px;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-family: 'Inter', sans-serif;
+  }
+  .pill.g { background: var(--green-light); color: var(--green-dark); }
+  .pill.r { background: var(--red-light); color: var(--red-dark); }
+
+  /* ── Footer ── */
+  .footer {
+    text-align: center;
+    padding: 16px;
+    font-size: 11px;
+    color: var(--gray-400);
+    border-top: 1px solid var(--gray-200);
+    margin-top: 8px;
+  }
+
+  @media (max-width: 768px) {
+    .main { padding: 16px; }
+    .header { padding: 16px; }
+    .filters { padding: 10px 16px; }
+    .charts-row.two-one,
+    .charts-row.two { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-left">
+    <h1>Dashboard Trésorerie — 2025</h1>
+    <p>GL FRS CLT · Fournisseurs & Clients · 6 976 écritures comptables</p>
+  </div>
+  <div class="header-right">
+    <span class="badge">Exercice 2025</span>
+    <span class="badge">MAD</span>
+  </div>
+</div>
+
+<div class="filters">
+  <label>Période :</label>
+  <button class="fbtn active" onclick="setFilter('all',this)">Toute l'année</button>
+  <button class="fbtn" onclick="setFilter('s1',this)">S1 — Jan/Jun</button>
+  <button class="fbtn" onclick="setFilter('s2',this)">S2 — Jul/Déc</button>
+  <button class="fbtn" onclick="setFilter('q1',this)">T1</button>
+  <button class="fbtn" onclick="setFilter('q2',this)">T2</button>
+  <button class="fbtn" onclick="setFilter('q3',this)">T3</button>
+  <button class="fbtn" onclick="setFilter('q4',this)">T4</button>
+</div>
+
+<div class="main">
+
+  <!-- KPIs -->
+  <div class="kpi-grid" id="kpiGrid"></div>
+
+  <!-- Charts row 1 -->
+  <div class="charts-row two-one">
+    <div class="chart-card">
+      <div class="chart-title">Encaissements vs Décaissements</div>
+      <div class="chart-sub">Flux mensuels comparés (MAD)</div>
+      <div class="legend">
+        <span class="leg"><span class="leg-dot" style="background:#1D9E75"></span>Encaissements</span>
+        <span class="leg"><span class="leg-dot" style="background:#D85A30"></span>Décaissements</span>
+      </div>
+      <div style="position:relative;height:260px">
+        <canvas id="cBar" role="img" aria-label="Encaissements et décaissements par mois"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Répartition par journal</div>
+      <div class="chart-sub">Encaissements par code journal</div>
+      <div style="position:relative;height:300px">
+        <canvas id="cPie" role="img" aria-label="Répartition par journal comptable"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts row 2 -->
+  <div class="charts-row two">
+    <div class="chart-card">
+      <div class="chart-title">Solde net mensuel</div>
+      <div class="chart-sub">Encaissements moins décaissements</div>
+      <div style="position:relative;height:200px">
+        <canvas id="cLine" role="img" aria-label="Solde net mensuel"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Solde cumulé</div>
+      <div class="chart-sub">Évolution de la position nette</div>
+      <div style="position:relative;height:200px">
+        <canvas id="cCum" role="img" aria-label="Solde cumulé 2025"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="table-card">
+    <div class="table-header">
+      <div class="chart-title">Récapitulatif mensuel détaillé</div>
+      <div class="chart-sub">Tous les flux de trésorerie par mois</div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead>
+          <tr>
+            <th>Mois</th>
+            <th>Encaissements</th>
+            <th>Décaissements</th>
+            <th>Solde net</th>
+            <th>Solde cumulé</th>
+            <th>Statut</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="footer">Dashboard Trésorerie 2025 · GL FRS CLT · Généré automatiquement</div>
+
+</div>
+
+<script>
+const DATA = {
+  labels: ['Jan','Fév','Mar','Avr','Mai','Jun','Jul','Aoû','Sep','Oct','Nov','Déc'],
+  fullLabels: ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'],
+  enc: [60385128.87,7896806.40,6516046.82,6685935.82,13375934.74,11366839.59,27388904.89,13796178.94,26299652.34,18930360.09,19080859.25,60258384.80],
+  dec: [54516376.21,13429313.24,12372416.14,18652069.83,18196720.68,16648435.84,25032547.74,23359560.55,18660053.78,13345100.04,23821327.38,27506426.37]
+};
+
+const JOURNALS = {
+  VTE: 117846200, RAN: 52433760, AWB4: 50252920,
+  AWB3: 36200150, OD: 8453565, EAP: 4733595,
+  ACH: 1895037, IMP: 152297
+};
+
+const RANGES = {
+  all:[0,11], s1:[0,5], s2:[6,11],
+  q1:[0,2], q2:[3,5], q3:[6,8], q4:[9,11]
+};
+
+function fmtM(v) {
+  const abs = Math.abs(v);
+  const sign = v < 0 ? '-' : '';
+  if (abs >= 1e6) return sign + (abs/1e6).toFixed(1) + ' M';
+  if (abs >= 1e3) return sign + (abs/1e3).toFixed(0) + ' K';
+  return sign + Math.round(abs);
+}
+function fmtFull(v) {
+  return new Intl.NumberFormat('fr-MA', {maximumFractionDigits:0}).format(v) + ' MAD';
+}
+
+function getSlice(f) {
+  const [s,e] = RANGES[f];
+  const enc = DATA.enc.slice(s,e+1);
+  const dec = DATA.dec.slice(s,e+1);
+  const soldes = enc.map((x,i)=>x-dec[i]);
+  let c=0; const cums = soldes.map(x=>{c+=x;return c;});
+  const tE = enc.reduce((a,b)=>a+b,0);
+  const tD = dec.reduce((a,b)=>a+b,0);
+  return {
+    labels: DATA.labels.slice(s,e+1),
+    full: DATA.fullLabels.slice(s,e+1),
+    enc, dec, soldes, cums,
+    tE, tD, solde: tE-tD
+  };
+}
+
+function renderKPIs(d) {
+  document.getElementById('kpiGrid').innerHTML = `
+    <div class="kpi-card green">
+      <div class="kpi-label">Total encaissements</div>
+      <div class="kpi-value">${fmtM(d.tE)}</div>
+      <div class="kpi-unit">MAD · Entrées de trésorerie</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-label">Total décaissements</div>
+      <div class="kpi-value">${fmtM(d.tD)}</div>
+      <div class="kpi-unit">MAD · Sorties de trésorerie</div>
+    </div>
+    <div class="kpi-card ${d.solde>=0?'blue':'red'}">
+      <div class="kpi-label">Solde net</div>
+      <div class="kpi-value">${fmtM(d.solde)}</div>
+      <div class="kpi-unit">MAD · ${d.solde>=0?'Excédent':'Déficit'}</div>
+    </div>
+    <div class="kpi-card amber">
+      <div class="kpi-label">Taux d'encaissement</div>
+      <div class="kpi-value">${(d.tE/d.tD*100).toFixed(1)}%</div>
+      <div class="kpi-unit">Encaissements / Décaissements</div>
+    </div>`;
+}
+
+function renderTable(d) {
+  let cum = 0;
+  document.getElementById('tbody').innerHTML = d.full.map((m,i)=>{
+    const s = d.soldes[i]; cum += s;
+    return `<tr>
+      <td class="td-mois">${m}</td>
+      <td style="color:var(--green-dark)">${fmtFull(d.enc[i])}</td>
+      <td style="color:var(--red-dark)">${fmtFull(d.dec[i])}</td>
+      <td class="${s>=0?'td-pos':'td-neg'}">${fmtFull(s)}</td>
+      <td style="color:var(--blue-dark)">${fmtFull(cum)}</td>
+      <td><span class="pill ${s>=0?'g':'r'}">${s>=0?'Excédent':'Déficit'}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+const gridColor = 'rgba(0,0,0,0.05)';
+const tickFont = {size:11,family:'Inter'};
+const fmt = v => fmtM(v);
+
+let barC, lineC, cumC, pieC;
+
+function initCharts(d) {
+  barC = new Chart(document.getElementById('cBar'), {
+    type:'bar',
+    data:{labels:d.labels, datasets:[
+      {label:'Encaissements',data:d.enc,backgroundColor:'#1D9E75',borderRadius:4,barPercentage:0.7},
+      {label:'Décaissements',data:d.dec,backgroundColor:'#D85A30',borderRadius:4,barPercentage:0.7}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtFull(c.raw)}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:tickFont,autoSkip:false}},
+        y:{grid:{color:gridColor},ticks:{font:tickFont,callback:fmt}}
+      }}
+  });
+
+  lineC = new Chart(document.getElementById('cLine'), {
+    type:'line',
+    data:{labels:d.labels, datasets:[{
+      label:'Solde net',data:d.soldes,
+      borderColor:'#2E6DA4',backgroundColor:'rgba(46,109,164,0.06)',
+      fill:true,tension:0.35,pointRadius:4,pointBackgroundColor:'#2E6DA4',borderWidth:2
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtFull(c.raw)}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:tickFont,autoSkip:false}},
+        y:{grid:{color:gridColor},ticks:{font:tickFont,callback:fmt}}
+      }}
+  });
+
+  cumC = new Chart(document.getElementById('cCum'), {
+    type:'line',
+    data:{labels:d.labels, datasets:[{
+      label:'Cumulé',data:d.cums,
+      borderColor:'#7F77DD',backgroundColor:'rgba(127,119,221,0.06)',
+      fill:true,tension:0.35,pointRadius:4,pointBackgroundColor:'#7F77DD',borderWidth:2
+    }]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>' '+fmtFull(c.raw)}}},
+      scales:{
+        x:{grid:{display:false},ticks:{font:tickFont,autoSkip:false}},
+        y:{grid:{color:gridColor},ticks:{font:tickFont,callback:fmt}}
+      }}
+  });
+
+  const colors = ['#1D9E75','#D85A30','#378ADD','#EF9F27','#D4537E','#7F77DD','#888780','#5DCAA5'];
+  pieC = new Chart(document.getElementById('cPie'), {
+    type:'doughnut',
+    data:{
+      labels:Object.keys(JOURNALS),
+      datasets:[{data:Object.values(JOURNALS),backgroundColor:colors,borderWidth:2,borderColor:'#fff',hoverOffset:6}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',
+      plugins:{
+        legend:{display:true,position:'bottom',labels:{font:{size:11,family:'Inter'},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:c=>' '+c.label+' : '+fmtM(c.raw)}}
+      }}
+  });
+}
+
+function updateCharts(d) {
+  barC.data.labels = d.labels;
+  barC.data.datasets[0].data = d.enc;
+  barC.data.datasets[1].data = d.dec;
+  barC.update();
+  lineC.data.labels = d.labels;
+  lineC.data.datasets[0].data = d.soldes;
+  lineC.update();
+  cumC.data.labels = d.labels;
+  cumC.data.datasets[0].data = d.cums;
+  cumC.update();
+}
+
+function setFilter(f, btn) {
+  document.querySelectorAll('.fbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  const d = getSlice(f);
+  renderKPIs(d);
+  renderTable(d);
+  updateCharts(d);
+}
+
+const init = getSlice('all');
+renderKPIs(init);
+renderTable(init);
+initCharts(init);
+</script>
+</body>
+</html>
